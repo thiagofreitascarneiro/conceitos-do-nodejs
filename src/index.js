@@ -75,7 +75,17 @@ app.post('/todos', checksExistsUserAccount, (request, response) => {
 });
 
 app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+   
+  const { usernameExist } = request;
+  const { id } = request.params;
+
+  const { title, deadline } = request.body;
+  
+  usernameExist.title = title
+  usernameExist.deadline = deadline
+
+  return response.status(201).send();
+
 });
 
 app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
