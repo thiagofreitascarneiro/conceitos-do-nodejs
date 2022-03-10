@@ -77,23 +77,32 @@ app.post('/todos', checksExistsUserAccount, (request, response) => {
 app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
    
   const { usernameExist } = request;
-  const id  = request.params;
-
+  const { id } = request.params;
+  console.log(id)
   const { title, deadline } = request.body;
+
+
+usernameExist.todos.map(value => {
+  if (value.id === id) {
+  value.title = title
+  value.deadline =  new Date(deadline).toISOString()
+
+  return response.status(201).json(value);
+}
   
-  usernameExist.title = title
-  usernameExist.deadline = deadline
-
-  return response.status(201).send();
-
+});
+  return response.status(404).send('Item do not exists!')
 });
 
 app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
   const { usernameExist } = request;
-  const { id } = request.body;
+  const { idRota } = request.body;
 
-  if (id === usernameExist.id) { 
-    usernameExist.todos.map((value) => value.done = true)
+  const { id } = request.params
+
+  if (idRota === id) { 
+    usernameExist.todos.map((value) => value.done = true, 
+    console.log(value))
   };
   
 return response.status(201).send(usernameExist.todos);
@@ -102,13 +111,17 @@ return response.status(201).send(usernameExist.todos);
 
 app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
   const { usernameExist } = request;
-  const { id } = request.body;
+  const { idRota } = request.body;
 
-if (id === usernameExist.id) { 
-  usernameExist =  usernameExist.todos.map((value) => value.id !== id)
+  const { id } = request.params
+
+if (id === idRota) { 
+  usernameExist =  usernameExist.todos.filter((value) => 
+  value.id !== id)
+  return response.status(201).send(usernameExist.todos);
 };
 
-return response.status(201).send(usernameExist.todos);
+return response.status(404).send("item não exlcuído.");
 
 });
 
