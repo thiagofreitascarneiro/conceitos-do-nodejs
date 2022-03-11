@@ -13,14 +13,14 @@ app.use(express.json());
 function checksExistsUserAccount(request, response, next) {
    const { username } = request.headers;
 
-   const usernameExist = users.find((value) => value.username === username)
+   const user = users.find((value) => value.username === username)
 
-   if(!usernameExist) {
+   if(!user) {
      return response.status(404).json({ error: 'user already exists!'})
    }
 
    // utilizei o request abaixo para passar para demais rotas que usarem o midleware
-   request.usernameExist = usernameExist;
+   request.user = user;
 
    return next();
 }
@@ -32,34 +32,36 @@ app.post('/users', (request, response) => {
     value.username === username)
 
  if(usernameExist) {
-   return response.status(404).json(
+   return response.status(400).json(
      { error: 'user already exists!'})
  }
 
-  users.push({
-    name,
-    username,
+ const user = {
     id: uuidv4(),
+    name,
+    username,  
     todos: []  
-  });
+  };
 
-  return response.status(201).send();
+  users.push(user)
+
+  return response.status(201).json(user);
 
 });
 
 app.get('/todos', checksExistsUserAccount, (request, response) => {
 
   //aqui eu pego o request usernameExist do midleware
-  const { usernameExist } = request;
+  const { user } = request;
 
-  return response.json(usernameExist.todos);
+  return response.json(user.todos);
 
 });
 
 app.post('/todos', checksExistsUserAccount, (request, response) => {
   const { title, deadline } = request.body;
 
-  const { usernameExist } = request; 
+  const { user } = request; 
 
   const todoOperation = {
     id: uuidv4(),
@@ -69,62 +71,69 @@ app.post('/todos', checksExistsUserAccount, (request, response) => {
     created_at: new Date()
   }
 
-  usernameExist.todos.push(todoOperation);
+  user.todos.push(todoOperation);
 
-  return response.status(201).send(usernameExist.todos);
+  return response.status(201).send(user.todos);
 });
 
 app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
    
-  const { usernameExist } = request;
+  const { user } = request;
+  
+  const { title, deadline } = request.body;
   const { id } = request.params;
   console.log(id)
-  const { title, deadline } = request.body;
 
+  const todo = user.todos.find(value => value.id === id);
 
-usernameExist.todos.map(value => {
+  if(!todo){
+    return response.status(404).send('Item do not exists!')
+  }
+
+user.todos.map(value => {
   if (value.id === id) {
   value.title = title
-  value.deadline =  new Date(deadline).toISOString()
+  value.deadline =  new Date(deadline)
 
-  return response.status(201).json(value);
-}
+  return response.status(201).json(user.todos);
+
+} 
   
 });
-  return response.status(404).send('Item do not exists!')
+ 
 });
 
 app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
-  const { usernameExist } = request;
-  const { idRota } = request.body;
+  const { user } = request;
+  const { id } = request.params;
 
-  const { id } = request.params
 
-  if (idRota === id) { 
-    usernameExist.todos.map((value) => value.done = true, 
-    console.log(value))
-  };
-  
-return response.status(201).send(usernameExist.todos);
+ const todo = user.todos.filter(value => value.id === id ).
+ map(item =>  item.done = true)
+
+ if(!todo){
+  return response.status(404).send('Item do not exists!')
+}
+
+ return response.json(user.todos);
 
 });
 
 app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
-  const { usernameExist } = request;
-  const { idRota } = request.body;
+  const { user } = request;
+  const { id } = request.params;
 
-  const { id } = request.params
+ const todo = user.todos.filter(value => value.id !== id)
 
-if (id === idRota) { 
-  usernameExist =  usernameExist.todos.filter((value) => 
-  value.id !== id)
-  return response.status(201).send(usernameExist.todos);
-};
+ console.log(todo)
 
-return response.status(404).send("item não exlcuído.");
+if (todo) { 
+  return response.status(204).json(user.todos);
+} else {
+  return response.status(404).json({error: "todo not found."});
+}
 
 });
 
-app.listen(4444);
 
 module.exports = app;
