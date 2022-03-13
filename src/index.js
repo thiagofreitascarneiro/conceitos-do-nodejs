@@ -73,7 +73,7 @@ app.post('/todos', checksExistsUserAccount, (request, response) => {
 
   user.todos.push(todoOperation);
 
-  return response.status(201).send(user.todos);
+  return response.status(201).json(todoOperation);
 });
 
 app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
@@ -82,24 +82,18 @@ app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
   
   const { title, deadline } = request.body;
   const { id } = request.params;
-  console.log(id)
-
+ 
   const todo = user.todos.find(value => value.id === id);
 
   if(!todo){
-    return response.status(404).send('Item do not exists!')
+    return response.status(404).json({ error: "Todo not found!" })
   }
 
-user.todos.map(value => {
-  if (value.id === id) {
-  value.title = title
-  value.deadline =  new Date(deadline)
+  todo.title = title;
+  todo.deadline = deadline;
 
-  return response.status(201).json(user.todos);
+  return response.json(todo);
 
-} 
-  
-});
  
 });
 
@@ -108,30 +102,35 @@ app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
   const { id } = request.params;
 
 
- const todo = user.todos.filter(value => value.id === id ).
- map(item =>  item.done = true)
+//  const todo = user.todos.filter(value => value.id === id ).
+//  map(item =>  item.done = true)
+
+ const todo = user.todos.find((todo) => todo.id === id);
 
  if(!todo){
-  return response.status(404).send('Item do not exists!')
-}
+   return response.status(404).json({ error: "Todo not found!" });
 
- return response.json(user.todos);
+};
 
+todo.done = true;
+
+return response.json(todo);
 });
 
 app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
   const { user } = request;
   const { id } = request.params;
 
- const todo = user.todos.filter(value => value.id !== id)
+ const isTodoAlreadyExists = user.todos.some(value => value.id === id)
 
- console.log(todo)
 
-if (todo) { 
-  return response.status(204).json(user.todos);
-} else {
-  return response.status(404).json({error: "todo not found."});
+if (!isTodoAlreadyExists) { 
+  return response.status(404).json({error: "Todo not found."});
 }
+
+user.todos = user.todos.filter((todo) => todo.id !== id);
+
+return response.status(204).json();
 
 });
 
